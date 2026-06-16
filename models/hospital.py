@@ -94,7 +94,7 @@ class HospitalHospital(models.Model):
             'name': 'Pharmacies',
             'res_model': 'pharmacy.pharmacy',
             'domain': [('hospital_id', '=', self.id)],
-            'view_mode': ',form',
+            'view_mode': 'list,form',
             'target': 'current',
         }
     
@@ -118,7 +118,7 @@ class HospitalHospital(models.Model):
             'name': 'Treatments',
             'res_model': 'hospital.treatment',
             'domain': [('hospital_id', '=', self.id)],
-            'view_mode': 'kanban,,form',
+            'view_mode': 'kanban,list,form',
             'target': 'current',
             'context': {'default_hospital_id': self.id},
         }

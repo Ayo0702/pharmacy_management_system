@@ -30,7 +30,6 @@
         'data/sequences.xml',
         'data/demo.xml',
         'views/reporting_views.xml',
-        'views/menu.xml',
         'views/hospital_views.xml',
         'views/patient_views.xml',
         'views/doctor_prescriber_views.xml',
@@ -43,6 +42,8 @@
         'views/portal_views.xml',
         'views/controlled_views.xml',
         'views/treatment_views.xml',
+        'views/dashboard_views.xml',
+        'views/menu.xml',
     ],
     'demo': [
         'data/demo.xml',
@@ -51,9 +52,16 @@
     'assets': {
         'web.assets_backend': [
             'pharmacy_management_system/static/src/scss/pharma_kanban.scss',
+            'pharmacy_management_system/static/src/scss/dashboard.scss', 
+            'pharmacy_management_system/static/src/js/dashboard.js',       
+            'pharmacy_management_system/static/src/xml/dashboard.xml',
+            
+
         ],
-        'point_of_sale.assets': [
+        'point_of_sale._assets_pos': [
             # Placeholder: JS to enforce lot/FEFO in POS; to be added later
+            'pharmacy_management_system/static/src/js/doctor_button.js',
+            'pharmacy_management_system/static/src/xml/doctor_button.xml',
         ],
     },
     'images': ['static/description/main_screenshot.png'],

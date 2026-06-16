@@ -283,19 +283,37 @@
         <field name="context">{'search_default_shortage': 1}</field>
     </record>
 
+    <!-- Inherit stock.lot form to expose hospital_id and pharmacy_id -->
+    <!-- stock.view_production_lot_form is the correct XML ID in Odoo 18 -->
+    <!-- We anchor on product_id which is always present in the base lot form -->
+    <record id="view_stock_lot_form_pharmacy_inherit" model="ir.ui.view">
+        <field name="name">stock.lot.form.pharmacy.inherit</field>
+        <field name="model">stock.lot</field>
+        <field name="inherit_id" ref="stock.view_production_lot_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='product_id']" position="after">
+                <field name="hospital_id"/>
+                <field name="pharmacy_id" domain="[('hospital_id','=',hospital_id)]"/>
+            </xpath>
+        </field>
+    </record>
+
     <!-- Expiring Lots Report (Branch-specific) -->
+    <!-- expiration_date is the native Odoo 18 Datetime field on stock.lot -->
     <record id="view_expiring_lots_list" model="ir.ui.view">
         <field name="name">expiring.lots.list</field>
         <field name="model">stock.lot</field>
         <field name="type">list</field>
         <field name="arch" type="xml">
-            <list string="Expiring Lots" decoration-warning="expiry_date != False">
-                <field name="name"/>
+            <list string="Expiring Lots"
+                  decoration-danger="expiration_date and expiration_date &lt; current_date"
+                  decoration-warning="expiration_date and expiration_date &gt;= current_date">
+                <field name="name" string="Lot/Serial Number"/>
                 <field name="product_id"/>
                 <field name="hospital_id"/>
                 <field name="pharmacy_id"/>
-                <field name="expiry_date"/>
-                <field name="product_qty"/>
+                <field name="expiration_date" widget="datetime"/>
+                <field name="product_qty" string="On Hand Qty"/>
             </list>
         </field>
     </record>
@@ -305,16 +323,16 @@
         <field name="model">stock.lot</field>
         <field name="arch" type="xml">
             <search string="Expiring Lots">
-                <field name="name"/>
+                <field name="name" string="Lot Number"/>
                 <field name="product_id"/>
                 <field name="hospital_id"/>
                 <field name="pharmacy_id"/>
-                <filter string="Has Expiry Date" name="has_expiry" domain="[('expiry_date', '!=', False)]"/>
+                <filter string="Has Expiry Date" name="has_expiry" domain="[('expiration_date', '!=', False)]"/>
                 <group expand="0" string="Group By">
                     <filter string="Product" name="group_product" context="{'group_by':'product_id'}"/>
                     <filter string="Hospital" name="group_hospital" context="{'group_by':'hospital_id'}"/>
                     <filter string="Pharmacy" name="group_pharmacy" context="{'group_by':'pharmacy_id'}"/>
-                    <filter string="Expiry Date" name="group_expiry" context="{'group_by':'expiry_date'}"/>
+                    <filter string="Expiry Date" name="group_expiry" context="{'group_by':'expiration_date:month'}"/>
                 </group>
             </search>
         </field>
@@ -323,9 +341,9 @@
     <record id="action_pharmacy_expiring_lots_from_branch" model="ir.actions.act_window">
         <field name="name">Expiring Lots</field>
         <field name="res_model">stock.lot</field>
-        <field name="view_mode">list</field>
+        <field name="view_mode">list,form</field>
         <field name="view_id" ref="view_expiring_lots_list"/>
-        <field name="domain">[('expiry_date', '!=', False)]</field>
+        <field name="domain">[('expiration_date', '!=', False)]</field>
         <field name="context">{'search_default_has_expiry': 1}</field>
     </record>
 

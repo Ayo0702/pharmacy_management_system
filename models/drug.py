@@ -94,17 +94,24 @@ class PharmacyDrug(models.Model):
     
     @api.depends('product_id')
     def _compute_expiry_alerts(self):
+        # expiration_date on stock.lot is a Datetime, so we compare using
+        # datetime objects, not plain date objects.
+        import datetime
+        today_start = datetime.datetime.combine(fields.Date.today(), datetime.time.min)
+        future_end = datetime.datetime.combine(
+            fields.Date.today() + relativedelta(days=30), datetime.time.max
+        )
         for rec in self:
             if rec.product_id:
-                product = self.env['product.product'].search([('product_tmpl_id', '=', rec.product_id.id)], limit=1)
+                product = self.env['product.product'].search(
+                    [('product_tmpl_id', '=', rec.product_id.id)], limit=1
+                )
                 if product:
-                    today = fields.Date.today()
-                    future_date = today + relativedelta(days=30)
                     count = self.env['stock.lot'].search_count([
                         ('product_id', '=', product.id),
-                        ('expiry_date', '!=', False),
-                        ('expiry_date', '<=', future_date),
-                        ('expiry_date', '>=', today)
+                        ('expiration_date', '!=', False),
+                        ('expiration_date', '>=', today_start),
+                        ('expiration_date', '<=', future_end),
                     ])
                     rec.expiry_alert_count = count
                     rec.has_expiring_lots = count > 0
@@ -117,12 +124,15 @@ class PharmacyDrug(models.Model):
     
     def _search_expiring_lots(self, operator, value):
         """Search for drugs with expiring lots"""
-        today = fields.Date.today()
-        future_date = today + relativedelta(days=30)
+        import datetime
+        today_start = datetime.datetime.combine(fields.Date.today(), datetime.time.min)
+        future_end = datetime.datetime.combine(
+            fields.Date.today() + relativedelta(days=30), datetime.time.max
+        )
         lots = self.env['stock.lot'].search([
-            ('expiry_date', '!=', False),
-            ('expiry_date', '<=', future_date),
-            ('expiry_date', '>=', today)
+            ('expiration_date', '!=', False),
+            ('expiration_date', '>=', today_start),
+            ('expiration_date', '<=', future_end),
         ])
         product_ids = lots.mapped('product_id').ids
         if not product_ids:
@@ -169,10 +179,10 @@ class PharmacyDrug(models.Model):
             'name': 'Stock',
             'res_model': 'stock.quant',
             'domain': [('product_id', '=', product.id)],
-            'view_mode': ',form',
+            'view_mode': 'list,form',
             'target': 'current',
         }
-    
+
     def action_view_expiring_lots(self):
         """Open expiring lots"""
         self.ensure_one()
@@ -181,19 +191,22 @@ class PharmacyDrug(models.Model):
         product = self.env['product.product'].search([('product_tmpl_id', '=', self.product_id.id)], limit=1)
         if not product:
             return False
-        today = fields.Date.today()
-        future_date = today + relativedelta(days=30)
+        import datetime
+        today_start = datetime.datetime.combine(fields.Date.today(), datetime.time.min)
+        future_end = datetime.datetime.combine(
+            fields.Date.today() + relativedelta(days=30), datetime.time.max
+        )
         return {
             'type': 'ir.actions.act_window',
             'name': 'Expiring Lots',
             'res_model': 'stock.lot',
             'domain': [
                 ('product_id', '=', product.id),
-                ('expiry_date', '!=', False),
-                ('expiry_date', '<=', future_date),
-                ('expiry_date', '>=', today)
+                ('expiration_date', '!=', False),
+                ('expiration_date', '>=', today_start),
+                ('expiration_date', '<=', future_end),
             ],
-            'view_mode': ',form',
+            'view_mode': 'list,form',
             'target': 'current',
         }
 
@@ -209,7 +222,7 @@ class PharmacyDrug(models.Model):
             'name': 'Hospital Coverage',
             'res_model': 'pharmacy.drug.coverage',
             'domain': [('drug_id', '=', self.id)],
-            'view_mode': ',form,graph,pivot',
+            'view_mode': 'list,form,graph,pivot',
             'target': 'current',
         }
 
@@ -233,7 +246,9 @@ class StockProductionLot(models.Model):
     recall_flag = fields.Boolean()
     recall_reason = fields.Text()
     temp_log = fields.Json()
-    expiry_date = fields.Date()
+    # NOTE: Do NOT add expiry_date here.
+    # Odoo 18 stock.lot already has `expiration_date` (a Datetime field).
+    # Use that native field in all domains and views.
 
 
 class PharmacyDrugCoverage(models.Model):
@@ -290,6 +305,11 @@ class PharmacyDrugCoverage(models.Model):
     @api.depends('drug_id', 'hospital_id', 'pharmacy_id')
     def _compute_has_expiring(self):
         StockLot = self.env['stock.lot']
+        import datetime
+        today_start = datetime.datetime.combine(fields.Date.today(), datetime.time.min)
+        future_end = datetime.datetime.combine(
+            fields.Date.today() + relativedelta(days=30), datetime.time.max
+        )
         for rec in self:
             has_expiring = False
             if rec.drug_id and rec.hospital_id:
@@ -297,13 +317,11 @@ class PharmacyDrugCoverage(models.Model):
                     ('product_tmpl_id', '=', rec.drug_id.product_id.id)
                 ], limit=1)
                 if product:
-                    today = fields.Date.today()
-                    future_date = today + relativedelta(days=30)
                     domain = [
                         ('product_id', '=', product.id),
-                        ('expiry_date', '!=', False),
-                        ('expiry_date', '>=', today),
-                        ('expiry_date', '<=', future_date),
+                        ('expiration_date', '!=', False),
+                        ('expiration_date', '>=', today_start),
+                        ('expiration_date', '<=', future_end),
                         ('hospital_id', '=', rec.hospital_id.id),
                     ]
                     if rec.pharmacy_id:
@@ -318,4 +336,3 @@ class PharmacyDrugCoverage(models.Model):
             'Drug coverage per hospital/pharmacy must be unique.'
         )
     ]
-

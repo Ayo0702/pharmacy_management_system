@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="pharmacy_management_system.DoctorButton">
+        <div class="control-button btn btn-light rounded-0 fw-bolder" t-on-click="onClick">
+            <i class="fa fa-user-md me-1" />
+            <span>Select Doctor</span>
+        </div>
+    </t>
+
+    <t t-inherit="point_of_sale.ActionpadWidget" t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('actionpad')]" position="inside">
+            <DoctorButton />
+        </xpath>
+    </t>
+</templates>

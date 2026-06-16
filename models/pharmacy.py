@@ -91,7 +91,6 @@ class PharmacyPharmacy(models.Model):
         Prescription = self.env['pharmacy.prescription']
         Lot = self.env['stock.lot']
         today = fields.Date.today()
-        future_date = today + relativedelta(days=30)
         
         # Batch prescription counts by pharmacy_id
         pharmacy_ids = self.ids
@@ -107,12 +106,17 @@ class PharmacyPharmacy(models.Model):
         # Batch expiring lot counts by pharmacy_id
         expiring_counts = {}
         if pharmacy_ids:
+            import datetime
+            today_start = datetime.datetime.combine(fields.Date.today(), datetime.time.min)
+            future_end = datetime.datetime.combine(
+                fields.Date.today() + relativedelta(days=30), datetime.time.max
+            )
             lot_data = Lot.read_group(
                 [
                     ('pharmacy_id', 'in', pharmacy_ids),
-                    ('expiry_date', '!=', False),
-                    ('expiry_date', '>=', today),
-                    ('expiry_date', '<=', future_date),
+                    ('expiration_date', '!=', False),
+                    ('expiration_date', '>=', today_start),
+                    ('expiration_date', '<=', future_end),
                 ],
                 ['pharmacy_id'],
                 ['pharmacy_id'],
@@ -157,21 +161,28 @@ class PharmacyPharmacy(models.Model):
             'type': 'ir.actions.act_window',
             'name': 'Branch Controlled Logs',
             'res_model': 'pharmacy.controlled.log',
-            'view_mode': 'kanban,,form,pivot,graph',
+            'view_mode': 'kanban,list,form,pivot,graph',
             'domain': [('pharmacy_id', '=', self.id)],
             'target': 'current',
         }
 
     def action_view_expiring_lots(self):
         self.ensure_one()
+        import datetime
+        today_start = datetime.datetime.combine(fields.Date.today(), datetime.time.min)
+        future_end = datetime.datetime.combine(
+            fields.Date.today() + relativedelta(days=30), datetime.time.max
+        )
         return {
             'type': 'ir.actions.act_window',
             'name': 'Branch Expiring Lots',
             'res_model': 'stock.lot',
-            'view_mode': ',form',
+            'view_mode': 'list,form',
             'domain': [
                 ('pharmacy_id', '=', self.id),
-                ('expiry_date', '!=', False),
+                ('expiration_date', '!=', False),
+                ('expiration_date', '>=', today_start),
+                ('expiration_date', '<=', future_end),
             ],
             'target': 'current',
         }
@@ -198,4 +209,3 @@ class PharmacyConfig(models.Model):
             tax = 'Tax-Included' if rec.tax_included else 'Tax-Excluded'
             substitution = 'Subs-Allowed' if rec.allow_substitution else 'Subs-Blocked'
             rec.name = f"{localization} | {tax} | {substitution}"
-

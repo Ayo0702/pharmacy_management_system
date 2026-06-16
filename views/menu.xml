@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
     <menuitem id="menu_pharmacy_root" name="Pharmacy" sequence="10"/>
-
+    <menuitem
+    id="menu_pharmacy_dashboard"
+    name="Dashboard"
+    parent="menu_pharmacy_root"
+    sequence="1"
+    action="pharmacy_management_system.action_open_pharmacy_dashboard"
+/>
     <menuitem id="menu_pharmacy_setup" name="Configuration" parent="menu_pharmacy_root" sequence="90"/>
     <menuitem id="menu_pharmacy_operations" name="Operations" parent="menu_pharmacy_root" sequence="20"/>
     <menuitem id="menu_pharmacy_reporting" name="Reporting" parent="menu_pharmacy_root" sequence="80"/>
@@ -29,7 +35,6 @@
     <menuitem id="menu_pharmacy_insurance_report" name="Insurance Claims Report" parent="menu_pharmacy_reporting" sequence="40" action="pharmacy_management_system.action_insurance_report"/>
     <menuitem id="menu_pharmacy_shortage_expiry" name="Shortage &amp; Expiry Reports" parent="menu_pharmacy_reporting" sequence="50"/>
     <menuitem id="menu_pharmacy_shortage_alerts" name="Shortage Alerts" parent="menu_pharmacy_shortage_expiry" sequence="10" action="pharmacy_management_system.action_pharmacy_shortage_alerts"/>
-    <menuitem id="menu_pharmacy_expiring_lots" name="Expiring Lots" parent="menu_pharmacy_shortage_expiry" sequence="20" action="pharmacy_management_system.action_pharmacy_expiring_lots_from_branch"/>
 
 </odoo>
 
